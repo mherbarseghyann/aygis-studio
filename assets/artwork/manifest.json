@@ -1,0 +1,106 @@
+{
+ "version": "R1.1",
+ "ppmm": 8.0,
+ "bleed_mm": 3.175,
+ "files": {
+  "BOX-05_CASE_outside": {
+   "image": "BOX-05_CASE_outside.jpg",
+   "gold": "BOX-05_CASE_outside_gold.png",
+   "width_px": 3190,
+   "height_px": 2508,
+   "trim_w": 392.4,
+   "trim_h": 307.1,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": false
+  },
+  "BOX-05_CASE_inside": {
+   "image": "BOX-05_CASE_inside.jpg",
+   "gold": "BOX-05_CASE_inside_gold.png",
+   "width_px": 3190,
+   "height_px": 2508,
+   "trim_w": 392.4,
+   "trim_h": 307.1,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": true
+  },
+  "BOX-05_INSERT_outside": {
+   "image": "BOX-05_INSERT_outside.jpg",
+   "gold": null,
+   "width_px": 2132,
+   "height_px": 1298,
+   "trim_w": 260.1,
+   "trim_h": 155.8,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": false
+  },
+  "BOX-10_CASE_outside": {
+   "image": "BOX-10_CASE_outside.jpg",
+   "gold": "BOX-10_CASE_outside_gold.png",
+   "width_px": 3190,
+   "height_px": 3084,
+   "trim_w": 392.4,
+   "trim_h": 379.1,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": false
+  },
+  "BOX-10_CASE_inside": {
+   "image": "BOX-10_CASE_inside.jpg",
+   "gold": "BOX-10_CASE_inside_gold.png",
+   "width_px": 3190,
+   "height_px": 3084,
+   "trim_w": 392.4,
+   "trim_h": 379.1,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": true
+  },
+  "BOX-10_INSERT_outside": {
+   "image": "BOX-10_INSERT_outside.jpg",
+   "gold": null,
+   "width_px": 2132,
+   "height_px": 1874,
+   "trim_w": 260.1,
+   "trim_h": 227.8,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": false
+  },
+  "BOX-15_CASE_outside": {
+   "image": "BOX-15_CASE_outside.jpg",
+   "gold": "BOX-15_CASE_outside_gold.png",
+   "width_px": 3190,
+   "height_px": 3660,
+   "trim_w": 392.4,
+   "trim_h": 451.1,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": false
+  },
+  "BOX-15_CASE_inside": {
+   "image": "BOX-15_CASE_inside.jpg",
+   "gold": "BOX-15_CASE_inside_gold.png",
+   "width_px": 3190,
+   "height_px": 3660,
+   "trim_w": 392.4,
+   "trim_h": 451.1,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": true
+  },
+  "BOX-15_INSERT_outside": {
+   "image": "BOX-15_INSERT_outside.jpg",
+   "gold": null,
+   "width_px": 2132,
+   "height_px": 2450,
+   "trim_w": 260.1,
+   "trim_h": 299.8,
+   "trim_x0_px": 25.4,
+   "trim_y0_px": 25.4,
+   "mirrored": false
+  }
+ }
+}

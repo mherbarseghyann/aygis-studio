@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYGIS Packaging Studio</title>
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="stylesheet" href="css/app.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
+</script>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <div class="sheet-handle" id="sheet-handle"></div>
+    <header class="brand">
+      <div class="brand-row">
+        <div class="brand-name">AYGIS</div>
+        <div class="brand-tag">Fine Confections</div>
+      </div>
+      <div class="brand-sub">Packaging Studio <span class="dot">·</span> <span id="version"></span></div>
+      <nav class="modes" id="modes">
+        <button data-mode="design" class="active">Design</button>
+        <button data-mode="render">Render</button>
+        <button data-mode="studio">Studio</button>
+      </nav>
+    </header>
+
+    <!-- ============================ DESIGN ============================ -->
+    <div class="mode-panel" id="panel-design">
+      <section class="block">
+        <h2>Box</h2>
+        <div class="seg" id="sku-seg">
+          <button data-sku="BOX-05"><b>5</b><span>confections</span></button>
+          <button data-sku="BOX-10"><b>10</b><span>confections</span></button>
+          <button data-sku="BOX-15"><b>15</b><span>confections</span></button>
+        </div>
+        <div class="hint" id="sku-dims"></div>
+        <div class="row">
+          <button class="btn primary" id="btn-open">Open box</button>
+          <button class="btn" id="btn-lift" title="Lift the insert tray out of the case">Lift tray</button>
+        </div>
+        <label class="slider"><span>Lid</span><input type="range" id="lid-range" min="0" max="112" step="1" value="0"><em id="lid-val">0°</em></label>
+        <div class="row toggles">
+          <label class="switch"><input type="checkbox" id="chk-conf" checked><i></i>Confections</label>
+          <label class="switch"><input type="checkbox" id="chk-insert" checked><i></i>Insert</label>
+        </div>
+      </section>
+
+      <section class="block designer-only">
+        <h2>Dielines</h2>
+        <div class="hint">Blank production templates for the selected box (die lines, bleed and safe guides, panel orientation hints). Design on the ARTWORK layer, export a PDF, then import it below.</div>
+        <div class="row">
+          <a class="btn small" id="dl-case-pdf" download>Case · PDF</a>
+          <a class="btn small" id="dl-case-ai" download>Case · AI</a>
+        </div>
+        <div class="row">
+          <a class="btn small" id="dl-insert-pdf" download>Insert · PDF</a>
+          <a class="btn small" id="dl-insert-ai" download>Insert · AI</a>
+        </div>
+      </section>
+
+      <section class="block designer-only">
+        <h2>Artwork</h2>
+        <div id="drop" class="drop">
+          <input type="file" id="file" accept="application/pdf,.pdf,image/png,image/jpeg" hidden>
+          <button class="btn primary" id="btn-import">Import design PDF…</button>
+          <div class="hint">or drop a PDF exported from a blank template</div>
+        </div>
+        <select id="sample" class="select"><option value="">Load a sample design…</option></select>
+        <div class="row">
+          <button class="btn small" id="btn-default">Brand artwork</button>
+          <button class="btn small" id="btn-white">White board</button>
+        </div>
+        <div id="design-status" class="status"></div>
+      </section>
+
+      <section class="block">
+        <h2>Environment</h2>
+        <div class="env-grid" id="env-grid"></div>
+        <div class="hint" id="env-blurb"></div>
+        <label class="slider"><span>Light</span><input type="range" id="light-range" min="0.3" max="2.2" step="0.05" value="1"><em id="light-val">1.00</em></label>
+        <label class="slider"><span>Exposure</span><input type="range" id="expo-range" min="0.5" max="1.8" step="0.05" value="1"><em id="expo-val">1.00</em></label>
+        <details class="adv">
+          <summary>Rendering</summary>
+          <div class="row toggles">
+            <label class="switch"><input type="checkbox" id="chk-ground" checked><i></i>Ground</label>
+            <label class="switch"><input type="checkbox" id="chk-shadow" checked><i></i>Shadows</label>
+            <label class="switch"><input type="checkbox" id="chk-ao" checked><i></i>Ambient occlusion</label>
+            <label class="switch"><input type="checkbox" id="chk-bloom" checked><i></i>Bloom</label>
+            <label class="switch"><input type="checkbox" id="chk-dof"><i></i>Depth of field</label>
+            <label class="switch"><input type="checkbox" id="chk-film" checked><i></i>Cinematic look</label>
+            <label class="switch"><input type="checkbox" id="chk-rotate"><i></i>Auto-rotate</label>
+          </div>
+        </details>
+      </section>
+
+      <section class="block collapsed">
+        <h2>Camera</h2>
+        <div class="seg" id="cam-seg">
+          <button data-cam="hero">Hero</button>
+          <button data-cam="front">Front</button>
+          <button data-cam="top">Top</button>
+          <button data-cam="side">Side</button>
+          <button data-cam="detail">Detail</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="btn-reset">Reset scene</button>
+          <button class="btn" id="btn-shot">Quick snapshot</button>
+        </div>
+        <button class="btn" id="btn-share">Copy share link</button>
+        <div class="hint">The link opens this box, scene, state and camera for anyone who can reach this server.</div>
+        <div class="hint"><span class="desk-only">Drag to orbit · wheel to zoom · right-drag to pan · click a confection to inspect · <kbd>O</kbd> open/close · <kbd>L</kbd> tray · <kbd>R</kbd> reset · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> variant</span><span class="touch-only">One finger orbits · pinch zooms · two fingers pan · tap a confection to inspect · double-tap opens/closes · long-press lifts the tray</span></div>
+      </section>
+    </div>
+
+    <!-- ============================ RENDER ============================ -->
+    <div class="mode-panel hidden" id="panel-render">
+      <section class="block">
+        <h2>Still render</h2>
+        <div class="hint">Place the box, orbit and zoom to the shot you want, then render it. <b>Current view</b> renders exactly what the viewport shows; other formats show a frame guide for the crop.</div>
+        <label class="field"><span>Camera</span>
+          <select id="r-cam" class="select">
+            <option value="current" selected>Current view (what you see)</option>
+            <option value="hero">Hero · three-quarter</option>
+            <option value="front">Front</option>
+            <option value="open">Open box</option>
+            <option value="interior">Interior · top-down</option>
+            <option value="detail">Detail · lid</option>
+          </select></label>
+        <label class="field"><span>Format</span>
+          <select id="r-aspect" class="select">
+            <option value="3:2">3 : 2 landscape</option>
+            <option value="16:9">16 : 9 widescreen</option>
+            <option value="1:1">1 : 1 square</option>
+            <option value="4:5">4 : 5 portrait</option>
+            <option value="2:3">2 : 3 portrait</option>
+            <option value="A4L">A4 landscape</option>
+            <option value="A4P">A4 portrait</option>
+            <option value="view" selected>Viewport (as seen)</option>
+          </select></label>
+        <label class="field"><span>Size</span>
+          <select id="r-size" class="select">
+            <option value="1600">1600 px long edge</option>
+            <option value="2400" selected>2400 px long edge</option>
+            <option value="3200">3200 px long edge</option>
+            <option value="4096">4096 px long edge</option>
+          </select></label>
+        <label class="field"><span>Background</span>
+          <select id="r-bg" class="select">
+            <option value="env" selected>Environment</option>
+            <option value="plain">Environment, no ground</option>
+            <option value="transparent">Transparent (PNG alpha)</option>
+          </select></label>
+        <div class="row toggles">
+          <label class="switch"><input type="checkbox" id="r-openstate"><i></i>Box open</label>
+          <label class="switch"><input type="checkbox" id="r-tray"><i></i>Tray lifted</label>
+        </div>
+        <button class="btn primary" id="btn-render">Render still</button>
+        <div id="render-status" class="status"></div>
+        <div id="render-preview" class="preview hidden"><img id="render-img" alt="render preview"><a id="render-dl" class="btn small" download>Download PNG</a></div>
+      </section>
+      <section class="block collapsed">
+        <h2>Scene</h2>
+        <div class="hint">Environment, light and exposure are set in the Design tab and apply to renders and videos.</div>
+        <div class="row">
+          <button class="btn small" id="r-goto-env">Change environment</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================ STUDIO ============================ -->
+    <div class="mode-panel hidden" id="panel-studio">
+      <nav class="subtabs" id="studio-tabs">
+        <button data-tab="video" class="active">Video</button>
+        <button data-tab="fold">Fold</button>
+      </nav>
+      <div id="studio-video">
+        <section class="block">
+          <h2>Animation</h2>
+          <div class="preset-list" id="video-presets"></div>
+          <div class="hint" id="video-blurb"></div>
+          <label class="slider"><span>Duration</span><input type="range" id="v-dur" min="4" max="30" step="1" value="10"><em id="v-dur-val">10 s</em></label>
+          <label class="field"><span>Box state</span>
+            <select id="v-state" class="select">
+              <option value="closed" selected>Closed</option>
+              <option value="open">Open</option>
+            </select></label>
+          <label class="field"><span>Camera</span>
+            <select id="v-camera" class="select">
+              <option value="path" selected>Animated camera path</option>
+              <option value="hold">Hold current view</option>
+            </select></label>
+          <div class="row">
+            <button class="btn" id="v-preview">Preview</button>
+            <button class="btn" id="v-stop">Stop</button>
+          </div>
+        </section>
+        <section class="block">
+          <h2>Export</h2>
+          <label class="field"><span>Size</span>
+            <select id="v-size" class="select">
+              <option value="1920x1080" selected>1920 × 1080 · 16:9</option>
+              <option value="1280x720">1280 × 720 · 16:9</option>
+              <option value="1080x1080">1080 × 1080 · square</option>
+              <option value="1080x1350">1080 × 1350 · 4:5</option>
+              <option value="1080x1920">1080 × 1920 · vertical</option>
+            </select></label>
+          <label class="field"><span>Frame rate</span>
+            <select id="v-fps" class="select"><option value="24">24 fps</option><option value="30" selected>30 fps</option><option value="60">60 fps</option></select></label>
+          <button class="btn primary" id="v-export">Export video</button>
+          <div id="video-status" class="status"></div>
+        </section>
+      </div>
+      <div id="studio-fold" class="hidden">
+        <section class="block">
+          <h2>Flat sheet → box</h2>
+          <div class="hint">The printed blanks fold along the real creases of the production dieline, in the assembly order of the construction guide. Pause anywhere and orbit to inspect.</div>
+          <div class="row">
+            <button class="btn primary" id="f-play">Play</button>
+            <button class="btn" id="f-restart">Restart</button>
+          </div>
+          <label class="slider"><span>Progress</span><input type="range" id="f-prog" min="0" max="1000" step="1" value="0"><em id="f-prog-val">0 %</em></label>
+          <label class="field"><span>Speed</span>
+            <select id="f-speed" class="select"><option value="0.5">0.5 ×</option><option value="1" selected>1 ×</option><option value="2">2 ×</option></select></label>
+          <label class="field"><span>Camera</span>
+            <select id="f-camera" class="select"><option value="path" selected>Guided camera</option><option value="hold">Free / hold view</option></select></label>
+          <div class="hint" id="f-caption"></div>
+        </section>
+        <section class="block">
+          <h2>Export</h2>
+          <div class="hint">Records the whole fold sequence with the guided camera at the size and frame rate chosen in the Video tab.</div>
+          <button class="btn primary" id="f-export">Export fold video</button>
+          <div id="fold-status" class="status"></div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="foot"><span>AYGIS Packaging Studio · dielines <span id="foot-ver"></span></span><a href="#" id="designer-link" class="designer-link">Designer access</a></footer>
+  </aside>
+
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <button id="panel-toggle" class="panel-toggle" title="Show / hide controls" aria-label="Show or hide controls">☰</button>
+    <div id="badge" class="badge"></div>
+    <div id="frame-guide" class="frame-guide hidden"></div>
+    <div id="quickbar" class="quickbar">
+      <button id="q-open" title="Open / close (double-tap the box)">Open</button>
+      <button id="q-lift" title="Lift tray (long-press the box)">Tray</button>
+      <span class="q-sep"></span>
+      <button data-qsku="BOX-05" title="5 confections">5</button>
+      <button data-qsku="BOX-10" title="10 confections">10</button>
+      <button data-qsku="BOX-15" title="15 confections">15</button>
+      <span class="q-sep"></span>
+      <button id="q-env" title="Next environment">Scene</button>
+      <button id="q-cam" title="Reset view">View</button>
+      <button id="q-shot" title="Save snapshot">Snap</button>
+    </div>
+    <div id="caption" class="caption hidden"></div>
+    <div id="inspect" class="inspect hidden">
+      <div id="inspect-text"></div>
+      <button class="btn small" id="btn-inspect-back">Back</button>
+    </div>
+    <div id="timeline" class="timeline hidden">
+      <button class="tl-btn" id="tl-play" title="Play / pause">▶</button>
+      <button class="tl-btn" id="tl-restart" title="Restart">↺</button>
+      <input type="range" id="tl-range" min="0" max="1000" step="1" value="0">
+      <span id="tl-time" class="tl-time">0.0 s</span>
+      <button class="tl-btn" id="tl-close" title="Leave animation">✕</button>
+    </div>
+    <div id="overlay" class="overlay"><div class="spinner"></div><div id="overlay-text">Loading…</div><div class="bar"><i id="overlay-bar"></i></div></div>
+    <div id="toast" class="toast hidden"></div>
+    <div id="pin-modal" class="modal hidden">
+      <form class="modal-card" id="pin-form">
+        <div class="brand-name small">AYGIS</div>
+        <h3>Designer access</h3>
+        <p>Enter the designer PIN to unlock template downloads and artwork import.</p>
+        <input type="password" id="pin-input" inputmode="numeric" autocomplete="one-time-code" placeholder="PIN" maxlength="12">
+        <div class="row"><button type="button" class="btn" id="pin-cancel">Cancel</button><button type="submit" class="btn primary">Unlock</button></div>
+        <div id="pin-msg" class="status"></div>
+      </form>
+    </div>
+  </main>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

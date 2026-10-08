@@ -1,0 +1,86 @@
+[
+ {
+  "file": "BOX-05_CASE_PRINT-READY_PDFX4.pdf",
+  "label": "BOX-05 CASE - production artwork (PDF/X-4, die layers on)",
+  "sku": "BOX-05",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-05_CASE_TEMPLATE-BLANK.pdf",
+  "label": "BOX-05 CASE - blank template (die + guides only)",
+  "sku": "BOX-05",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-05_INSERT_PRINT-READY_PDFX4.pdf",
+  "label": "BOX-05 INSERT - production artwork (PDF/X-4, die layers on)",
+  "sku": "BOX-05",
+  "comp": "INSERT"
+ },
+ {
+  "file": "BOX-05_INSERT_TEMPLATE-BLANK.pdf",
+  "label": "BOX-05 INSERT - blank template (die + guides only)",
+  "sku": "BOX-05",
+  "comp": "INSERT"
+ },
+ {
+  "file": "BOX-10_CASE_PRINT-READY_PDFX4.pdf",
+  "label": "BOX-10 CASE - production artwork (PDF/X-4, die layers on)",
+  "sku": "BOX-10",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-10_CASE_TEMPLATE-BLANK.pdf",
+  "label": "BOX-10 CASE - blank template (die + guides only)",
+  "sku": "BOX-10",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-10_INSERT_PRINT-READY_PDFX4.pdf",
+  "label": "BOX-10 INSERT - production artwork (PDF/X-4, die layers on)",
+  "sku": "BOX-10",
+  "comp": "INSERT"
+ },
+ {
+  "file": "BOX-10_INSERT_TEMPLATE-BLANK.pdf",
+  "label": "BOX-10 INSERT - blank template (die + guides only)",
+  "sku": "BOX-10",
+  "comp": "INSERT"
+ },
+ {
+  "file": "BOX-15_CASE_PRINT-READY_PDFX4.pdf",
+  "label": "BOX-15 CASE - production artwork (PDF/X-4, die layers on)",
+  "sku": "BOX-15",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-15_CASE_TEMPLATE-BLANK.pdf",
+  "label": "BOX-15 CASE - blank template (die + guides only)",
+  "sku": "BOX-15",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-15_INSERT_PRINT-READY_PDFX4.pdf",
+  "label": "BOX-15 INSERT - production artwork (PDF/X-4, die layers on)",
+  "sku": "BOX-15",
+  "comp": "INSERT"
+ },
+ {
+  "file": "BOX-15_INSERT_TEMPLATE-BLANK.pdf",
+  "label": "BOX-15 INSERT - blank template (die + guides only)",
+  "sku": "BOX-15",
+  "comp": "INSERT"
+ },
+ {
+  "file": "BOX-10_CASE_TEST-DESIGN_PDFX4-bleed-layers.pdf",
+  "label": "BOX-10 CASE - panel orientation TEST design (PDF/X-4, bleed, layers)",
+  "sku": "BOX-10",
+  "comp": "CASE"
+ },
+ {
+  "file": "BOX-10_CASE_TEST-DESIGN_HQ-nobleed-flat.pdf",
+  "label": "BOX-10 CASE - panel orientation TEST design (flattened, no bleed)",
+  "sku": "BOX-10",
+  "comp": "CASE"
+ }
+]
