@@ -4,7 +4,7 @@
  "bleed_mm": 3.175,
  "files": {
   "BOX-05_CASE_outside": {
-   "image": "BOX-05_CASE_outside.jpg",
+   "image": "BOX-05_CASE_outside.webp",
    "gold": "BOX-05_CASE_outside_gold.png",
    "width_px": 3190,
    "height_px": 2508,
@@ -15,7 +15,7 @@
    "mirrored": false
   },
   "BOX-05_CASE_inside": {
-   "image": "BOX-05_CASE_inside.jpg",
+   "image": "BOX-05_CASE_inside.webp",
    "gold": "BOX-05_CASE_inside_gold.png",
    "width_px": 3190,
    "height_px": 2508,
@@ -26,7 +26,7 @@
    "mirrored": true
   },
   "BOX-05_INSERT_outside": {
-   "image": "BOX-05_INSERT_outside.jpg",
+   "image": "BOX-05_INSERT_outside.webp",
    "gold": null,
    "width_px": 2132,
    "height_px": 1298,
@@ -37,7 +37,7 @@
    "mirrored": false
   },
   "BOX-10_CASE_outside": {
-   "image": "BOX-10_CASE_outside.jpg",
+   "image": "BOX-10_CASE_outside.webp",
    "gold": "BOX-10_CASE_outside_gold.png",
    "width_px": 3190,
    "height_px": 3084,
@@ -48,7 +48,7 @@
    "mirrored": false
   },
   "BOX-10_CASE_inside": {
-   "image": "BOX-10_CASE_inside.jpg",
+   "image": "BOX-10_CASE_inside.webp",
    "gold": "BOX-10_CASE_inside_gold.png",
    "width_px": 3190,
    "height_px": 3084,
@@ -59,7 +59,7 @@
    "mirrored": true
   },
   "BOX-10_INSERT_outside": {
-   "image": "BOX-10_INSERT_outside.jpg",
+   "image": "BOX-10_INSERT_outside.webp",
    "gold": null,
    "width_px": 2132,
    "height_px": 1874,
@@ -70,7 +70,7 @@
    "mirrored": false
   },
   "BOX-15_CASE_outside": {
-   "image": "BOX-15_CASE_outside.jpg",
+   "image": "BOX-15_CASE_outside.webp",
    "gold": "BOX-15_CASE_outside_gold.png",
    "width_px": 3190,
    "height_px": 3660,
@@ -81,7 +81,7 @@
    "mirrored": false
   },
   "BOX-15_CASE_inside": {
-   "image": "BOX-15_CASE_inside.jpg",
+   "image": "BOX-15_CASE_inside.webp",
    "gold": "BOX-15_CASE_inside_gold.png",
    "width_px": 3190,
    "height_px": 3660,
@@ -92,7 +92,7 @@
    "mirrored": true
   },
   "BOX-15_INSERT_outside": {
-   "image": "BOX-15_INSERT_outside.jpg",
+   "image": "BOX-15_INSERT_outside.webp",
    "gold": null,
    "width_px": 2132,
    "height_px": 2450,
@@ -102,5 +102,6 @@
    "trim_y0_px": 25.4,
    "mirrored": false
   }
- }
+ },
+ "format_note": "page art as lossy WebP q92 (6-15x smaller than JPEG q90 4:4:4, mean error < 0.6/255); gold masks lossless PNG"
 }

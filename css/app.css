@@ -47,7 +47,10 @@ kbd { background: var(--panel-3); border: 1px solid var(--line-2); border-radius
 .seg button:hover { background: var(--panel-3); color: var(--text); }
 .seg button.active { background: linear-gradient(180deg, #3a3129, #2f2823); color: var(--gold-2); box-shadow: inset 0 0 0 1px var(--gold-dim); }
 .seg button.active b, .seg button.active span { color: var(--gold-2); }
-#cam-seg button { padding: 8px 2px; font-size: 11px; }
+#cam-seg { grid-auto-flow: row; grid-template-columns: repeat(4, 1fr); }
+#cam-seg button { padding: 8px 2px; font-size: 11px; border-bottom: 1px solid var(--line); }
+#cam-seg button:nth-child(4n) { border-right: 0; }
+#cam-seg button:nth-last-child(-n+4) { border-bottom: 0; }
 .btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 9px 12px; cursor: pointer; font: 600 12px/1.2 var(--sans); flex: 1; letter-spacing: .02em; transition: background .15s, border-color .15s, color .15s, transform .05s; }
 .btn:hover { background: var(--panel-3); border-color: #4a4446; }
 .btn:active { transform: translateY(1px); }
@@ -180,3 +183,13 @@ body.designer .designer-link { color: var(--gold-dim); }
 .modal-card input { background: var(--panel-2); border: 1px solid var(--line-2); border-radius: var(--radius-s); color: var(--text); padding: 10px 12px; font: 600 16px var(--sans); letter-spacing: .3em; text-align: center; }
 .modal-card input:focus { outline: none; border-color: var(--gold-dim); }
 .brand-name.small { font-size: 18px; }
+
+/* start-up steps + non-blocking status chip */
+.steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; gap: 14px; font-size: 11px; letter-spacing: .04em; color: var(--faint); }
+.steps li { display: flex; align-items: center; gap: 6px; }
+.steps li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+.steps li.done { color: var(--muted); } .steps li.done::before { background: var(--gold-dim); }
+.steps li.now { color: var(--gold-2); } .steps li.now::before { background: var(--gold-2); box-shadow: 0 0 0 3px rgba(212,175,106,.18); }
+.pill { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: rgba(20,18,19,.82); border: 1px solid var(--line-2); color: var(--text); font-size: 12px; padding: 7px 14px; border-radius: 999px; z-index: 4; backdrop-filter: blur(6px); transition: opacity .25s; pointer-events: none; }
+.pill.hidden { opacity: 0; }
+@media (max-width: 560px) { .steps { flex-wrap: wrap; justify-content: center; gap: 8px 12px; } }

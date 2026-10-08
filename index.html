@@ -7,8 +7,35 @@
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="css/app.css">
 <script type="importmap">
-{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/" } }
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/" } }
 </script>
+<!-- fetch the whole ES-module graph in parallel instead of discovering it level by level -->
+<link rel="modulepreload" href="./vendor/three/three.module.min.js">
+<link rel="modulepreload" href="./vendor/three/three.core.min.js">
+<link rel="modulepreload" href="./js/app.js">
+<link rel="modulepreload" href="./js/viewer.js">
+<link rel="modulepreload" href="./js/environments.js">
+<link rel="modulepreload" href="./js/lookdev.js">
+<link rel="modulepreload" href="./js/props.js">
+<link rel="modulepreload" href="./js/sky.js">
+<link rel="modulepreload" href="./js/texbake.js">
+<link rel="modulepreload" href="./js/units.js">
+<link rel="modulepreload" href="./js/artwork.js">
+<link rel="modulepreload" href="./js/boxmodel.js">
+<link rel="modulepreload" href="./js/panelgeom.js">
+<link rel="modulepreload" href="./js/confections.js">
+<link rel="modulepreload" href="./js/timeline.js">
+<link rel="modulepreload" href="./js/recorder.js">
+<link rel="modulepreload" href="./js/access.js">
+<link rel="modulepreload" href="./vendor/three/OrbitControls.js">
+<link rel="modulepreload" href="./vendor/three/GLTFLoader.js">
+<link rel="modulepreload" href="./vendor/three/BufferGeometryUtils.js">
+<link rel="modulepreload" href="./vendor/three/postprocessing/EffectComposer.js">
+<link rel="modulepreload" href="./vendor/three/postprocessing/RenderPass.js">
+<link rel="modulepreload" href="./vendor/three/postprocessing/GTAOPass.js">
+<link rel="modulepreload" href="./vendor/three/postprocessing/OutputPass.js">
+<link rel="modulepreload" href="./vendor/three/postprocessing/Pass.js">
+<link rel="preload" href="./assets/models/box_models.json" as="fetch" crossorigin>
 </head>
 <body>
 <div id="app">
@@ -82,28 +109,34 @@
         <div class="hint" id="env-blurb"></div>
         <label class="slider"><span>Light</span><input type="range" id="light-range" min="0.3" max="2.2" step="0.05" value="1"><em id="light-val">1.00</em></label>
         <label class="slider"><span>Exposure</span><input type="range" id="expo-range" min="0.5" max="1.8" step="0.05" value="1"><em id="expo-val">1.00</em></label>
+        <label class="field"><span>Quality</span>
+          <select id="q-mode" class="select" title="Auto picks a tier from this device's GPU and measured frame times">
+            <option value="auto">Auto</option><option value="high">High</option><option value="medium">Medium</option><option value="performance">Performance</option>
+          </select></label>
         <details class="adv">
           <summary>Rendering</summary>
           <div class="row toggles">
             <label class="switch"><input type="checkbox" id="chk-ground" checked><i></i>Ground</label>
             <label class="switch"><input type="checkbox" id="chk-shadow" checked><i></i>Shadows</label>
             <label class="switch"><input type="checkbox" id="chk-ao" checked><i></i>Ambient occlusion</label>
-            <label class="switch"><input type="checkbox" id="chk-bloom" checked><i></i>Bloom</label>
-            <label class="switch"><input type="checkbox" id="chk-dof"><i></i>Depth of field</label>
+            <label class="switch"><input type="checkbox" id="chk-dof" checked><i></i>Depth of field</label>
             <label class="switch"><input type="checkbox" id="chk-film" checked><i></i>Cinematic look</label>
             <label class="switch"><input type="checkbox" id="chk-rotate"><i></i>Auto-rotate</label>
           </div>
         </details>
       </section>
 
-      <section class="block collapsed">
+      <section class="block">
         <h2>Camera</h2>
         <div class="seg" id="cam-seg">
-          <button data-cam="hero">Hero</button>
-          <button data-cam="front">Front</button>
-          <button data-cam="top">Top</button>
-          <button data-cam="side">Side</button>
-          <button data-cam="detail">Detail</button>
+          <button data-cam="hero" class="active" title="Three-quarter hero, 85 mm, f/8">Hero</button>
+          <button data-cam="lifestyle" title="Environmental shot, 50 mm, f/2.8">Lifestyle</button>
+          <button data-cam="front" title="Front, 100 mm">Front</button>
+          <button data-cam="top" title="Flat lay, 70 mm">Top</button>
+          <button data-cam="side" title="Side, 85 mm">Side</button>
+          <button data-cam="open" title="Open box, 70 mm">Open</button>
+          <button data-cam="detail" title="Foil detail, 100 mm macro, f/4">Detail</button>
+          <button data-cam="macro" title="Confections close-up, 100 mm macro, f/4">Confections</button>
         </div>
         <div class="row">
           <button class="btn" id="btn-reset">Reset scene</button>
@@ -123,11 +156,15 @@
         <label class="field"><span>Camera</span>
           <select id="r-cam" class="select">
             <option value="current" selected>Current view (what you see)</option>
-            <option value="hero">Hero · three-quarter</option>
-            <option value="front">Front</option>
+            <option value="hero">Hero · three-quarter · 85 mm</option>
+            <option value="lifestyle">Lifestyle · environment · 50 mm</option>
+            <option value="front">Front · 100 mm</option>
+            <option value="top">Flat lay · 70 mm</option>
+            <option value="side">Side · 85 mm</option>
             <option value="open">Open box</option>
             <option value="interior">Interior · top-down</option>
-            <option value="detail">Detail · lid</option>
+            <option value="detail">Detail · foil · 100 mm macro</option>
+            <option value="macro">Confections · 100 mm macro</option>
           </select></label>
         <label class="field"><span>Format</span>
           <select id="r-aspect" class="select">
@@ -269,7 +306,9 @@
       <span id="tl-time" class="tl-time">0.0 s</span>
       <button class="tl-btn" id="tl-close" title="Leave animation">✕</button>
     </div>
-    <div id="overlay" class="overlay"><div class="spinner"></div><div id="overlay-text">Loading…</div><div class="bar"><i id="overlay-bar"></i></div></div>
+    <div id="overlay" class="overlay"><div class="spinner"></div><div id="overlay-text">Loading…</div><div class="bar"><i id="overlay-bar"></i></div>
+      <ol id="overlay-steps" class="steps"><li class="now">Loading packaging</li><li>Preparing materials</li><li>Loading environment</li><li>Ready</li></ol></div>
+    <div id="pill" class="pill hidden"></div>
     <div id="toast" class="toast hidden"></div>
     <div id="pin-modal" class="modal hidden">
       <form class="modal-card" id="pin-form">

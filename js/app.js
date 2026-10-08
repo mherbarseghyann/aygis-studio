@@ -5,11 +5,14 @@ import { FoldedComponent, lidAngles } from './boxmodel.js';
 import { Confections } from './confections.js';
 import { ArtworkSet, loadDefaultArtwork, paperMaterial, edgeMaterial, BOARD_WHITE } from './artwork.js';
 import { isDesigner, verifyPin, leaveDesigner } from './access.js';
-import { ENVIRONMENTS, envThumbnail } from './environments.js';
+import { ENVIRONMENTS, envThumbnail, resolveEnvId } from './environments.js';
+import { setProduct, auditScale } from './units.js';
 import { VIDEO_PRESETS, foldState, foldCamera, FOLD_DURATION } from './timeline.js';
 import { recordVideo, pickMime, downloadBlob } from './recorder.js';
 
 const $ = (s) => document.querySelector(s);
+// startup timeline (ms since navigation), readable as AYGIS.timings
+const timings = {}; const mark = (k) => { timings[k] = Math.round(performance.now()); };
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 const OPEN_DEG = 112;
 
@@ -30,6 +33,15 @@ let viewer, confections;
 const whiteMats = () => { const m = paperMaterial(null, { color: BOARD_WHITE }); const e = edgeMaterial(); return { front: () => m, back: () => m, edge: e, all: [m, e] }; };
 
 // ---------------------------------------------------------------- small UI helpers
+const STEPS = ['packaging', 'materials', 'environment', 'ready'];
+/** staged start-up loader: Loading packaging -> Preparing materials -> Loading environment -> Ready */
+function loaderStep(name) {
+  const i = STEPS.indexOf(name);
+  $$('#overlay-steps li').forEach((li, k) => { li.classList.toggle('done', k < i); li.classList.toggle('now', k === i); });
+}
+/** non-blocking status chip (environment builds after start-up) */
+let pillT = 0;
+function pill(text) { const p = $('#pill'); if (!p) return; clearTimeout(pillT); if (text === null) { pillT = setTimeout(() => p.classList.add('hidden'), 250); return; } p.textContent = text; p.classList.remove('hidden'); }
 function overlay(text, k) {
   const o = $('#overlay');
   if (text === null) { o.classList.add('hidden'); return; }
@@ -52,26 +64,35 @@ function materialsFor(comp) {
   return def ? def.materialsFor(comp) : whiteMats();
 }
 async function ensureDefault(sku) {
-  if (!state.defaultSets[sku]) state.defaultSets[sku] = await loadDefaultArtwork(sku, state.models, state.manifest, viewer.renderer);
+  // only the visible SKU keeps its (large) page textures on the GPU; others are re-created on demand (WebP, cached)
+  for (const k of Object.keys(state.defaultSets)) if (k !== sku) { state.defaultSets[k].dispose(); delete state.defaultSets[k]; }
+  if (!state.defaultSets[sku]) state.defaultSets[sku] = await loadDefaultArtwork(sku, state.models, state.manifest, viewer.renderer, viewer.q.texPPMM);
   return state.defaultSets[sku];
 }
+/** geometry of a folded component (materials belong to the artwork sets and are disposed with them) */
+function disposeComponent(c) { if (c) c.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
 
 // ---------------------------------------------------------------- box
 async function buildBox(sku, { keepCamera = false } = {}) {
   if (state.player.kind) exitTimeline();
-  overlay(`Folding ${sku}…`, 0.75);
-  await ensureDefault(sku);
-  if (state.box) { viewer.root.remove(state.box.group); viewer.root.remove(state.insert.group); }
+  if (state.booted) overlay(`Folding ${sku}…`, 0.75); else { loaderStep('packaging'); overlay('Loading packaging…', 0.5); }
+  await ensureDefault(sku); mark('art_' + sku);
+  if (state.box) { viewer.root.remove(state.box.group); viewer.root.remove(state.insert.group); disposeComponent(state.box); disposeComponent(state.insert); }
   const m = state.models.skus[sku];
   state.sku = sku; state.dims = { L: m.outer.L, D: m.outer.D, H: m.outer.H };
   state.placement = new THREE.Matrix4(); state.placement.set(...m.insert_placement);
-  state.box = new FoldedComponent(m.case, materialsFor('CASE'));
+  setProduct(m);
+  viewer.setSubject(state.dims);
+  state.box = new FoldedComponent(m.case, materialsFor('CASE'));      // closure magnets are concealed (not modelled)
   state.insert = new FoldedComponent(m.insert, materialsFor('INSERT'), state.placement);
   viewer.root.add(state.box.group); viewer.root.add(state.insert.group);
   state.insert.group.visible = state.showInsert;
   confections.populate(m, state.insert);
   confections.setVisible(state.showConf && state.showInsert);
-  viewer.markShadowCasters();
+  viewer.markShadowCasters(); mark('fold_' + sku);
+  if (!state.booted) loaderStep('materials');
+  overlay('Preparing materials…', 0.9); await nextPaint();
+  await viewer.compileScene(); mark('compiled_' + sku);
   applyLift(state.lift);
   setOpen(state.openDeg);
   $$('#sku-seg button').forEach(b => b.classList.toggle('active', b.dataset.sku === sku));
@@ -87,12 +108,14 @@ function refreshMaterials() {
   if (!state.box) return;
   state.box.setMaterials(materialsFor('CASE'));
   state.insert.setMaterials(materialsFor('INSERT'));
+  viewer.invalidate();
 }
 function setOpenRaw(deg) {
   if (!state.box) return;
   const m = state.models.skus[state.sku];
   const a = lidAngles(m, m.case, deg);
   state.box.update({ LT: a.LT, FO: a.FO });
+  viewer.productChanged();
 }
 function setOpen(deg) {
   state.openDeg = deg; setOpenRaw(deg);
@@ -107,6 +130,7 @@ function applyLift(z) {
   state.insert.extra.makeTranslation(0, 0, z);
   state.insert.update({});
   confections.updatePositions();
+  viewer.productChanged();
 }
 function liftHeight() { return Math.max(55, state.dims.H * 1.3); }
 function animateLift(on) {
@@ -124,7 +148,7 @@ function inspect(hit) {
   state.camBefore = { pos: viewer.camera.position.clone(), target: viewer.controls.target.clone() };
   const p = new THREE.Vector3(); c.getWorldPosition(p); p.y += 8;
   const dir = viewer.camera.position.clone().sub(p).normalize(); dir.y = Math.max(dir.y, 0.45); dir.normalize();
-  viewer.moveCamera(p.clone().add(dir.multiplyScalar(95)), p, 900);
+  viewer.moveCamera(p.clone().add(dir.multiplyScalar(105)), p, 900, { focal: 100, fstop: 4, shiftY: 0 });
   $('#inspect').classList.remove('hidden');
   const m = state.models.skus[state.sku];
   $('#inspect-text').textContent = `Confection ${d.index + 1} of ${m.count} · ${d.name} · ${m.product.D_conf} mm in a ${m.product.cup_base} × ${m.product.cup_h} mm paper cup · cavity Ø ${m.cavities.hole_d} mm at ${m.cavities.pitch} mm pitch`;
@@ -157,7 +181,7 @@ async function handleImport(getBuffer, label) {
     for (const key of keys) {
       const [sku, comp] = key.split('|'); targetSku = sku;
       const m = state.models.skus[sku];
-      const set = state.customSets[sku] || (state.customSets[sku] = new ArtworkSet(viewer.renderer));
+      const set = state.customSets[sku] || (state.customSets[sku] = new ArtworkSet(viewer.renderer, viewer.q.texPPMM));
       const bbox = (comp === 'CASE' ? m.case : m.insert).bbox;
       const sides = comp === 'CASE' ? ['outside', 'inside'] : ['outside'];
       groups[key].forEach(({ pg, i }, k) => {
@@ -189,25 +213,31 @@ function fileImport(file) {
 
 // ---------------------------------------------------------------- environments
 async function setEnvironmentUI(id) {
+  id = resolveEnvId(id);
   if (state.envId === id && viewer.env) return;
   const def = ENVIRONMENTS.find(e => e.id === id);
-  overlay(`Building environment · ${def.name}…`); await nextPaint();
-  viewer.setEnvironment(id);
+  // the box stays visible and the panel stays usable while the set is built
+  if (state.booted) pill(`Loading environment · ${def.name}…`); else { loaderStep('environment'); overlay('Loading environment…', 0.95); }
+  await nextPaint(); await nextPaint();
+  await viewer.setEnvironment(id);
+  pill(null);
+  if (/[?&]debug\b/.test(location.search)) { const bad = viewer.lastAudit || []; console.info('[scale audit]', def.id, bad.length ? bad : 'all props within 15 % of their reference size', viewer.lastMerge); }
+  if (!viewer.userMovedCamera && state.dims) viewer.frame(state.dims, state.camPreset || 'hero', true);
   state.envId = id;
   $$('.env-card').forEach(c => c.classList.toggle('active', c.dataset.env === id));
   $('#env-blurb').textContent = def.blurb;
-  overlay(null);
+  if (!state.booted) overlay(null);
 }
 function buildEnvGrid() {
   const grid = $('#env-grid');
   for (const def of ENVIRONMENTS) {
     const b = document.createElement('button'); b.className = 'env-card'; b.dataset.env = def.id; b.title = def.blurb;
-    b.innerHTML = `<img alt=""><span>${def.name}</span>`;
+    b.innerHTML = `<img alt="" style="background:#${def.swatch.toString(16).padStart(6, '0')}"><span>${def.name}</span>`;
     b.addEventListener('click', () => setEnvironmentUI(def.id));
     grid.appendChild(b);
   }
   // thumbnails after first paint (cheap, ~30 ms each)
-  setTimeout(() => { for (const def of ENVIRONMENTS) { const img = grid.querySelector(`[data-env="${def.id}"] img`); img.src = envThumbnail(def); } }, 50);
+  for (const def of ENVIRONMENTS) { const img = grid.querySelector(`[data-env="${def.id}"] img`); img.onerror = () => { img.removeAttribute('src'); img.style.visibility = 'hidden'; }; img.src = envThumbnail(def); }
 }
 
 // ---------------------------------------------------------------- timeline player (video + fold)
@@ -218,7 +248,7 @@ function cameraAuto() { return (state.player.kind === 'fold' ? state.foldCamera 
 function applyVideoFrame(t, auto = cameraAuto()) {
   const P = VIDEO_PRESETS[state.videoPreset];
   const f = P.fn(t, timelineCtx());
-  if (auto) viewer.setCamera(f.cam.pos, f.cam.target);
+  if (auto) viewer.setCamera(f.cam.pos, f.cam.target, f.cam.lens);
   setOpenRaw(f.open); applyLift(f.lift || 0);
   viewer.setAnimLight(f.light ?? 1, f.exposure ?? 1, f.interior ?? 0);
 }
@@ -230,6 +260,7 @@ function applyFoldFrame(t, auto = cameraAuto()) {
   state.insert.group.visible = true;
   confections.group.visible = st.conf.visible && state.showConf;
   confections.updatePositions(st.conf.drop);
+  viewer.productChanged();
   if (auto) { const c = foldCamera(t, (n) => viewer.cameraFor(state.dims, n), state.dims); viewer.setCamera(c.pos, c.target); }
   viewer.setAnimLight(1, 1, 0);
   const cap = $('#caption'); cap.textContent = st.caption; cap.classList.remove('hidden');
@@ -262,12 +293,13 @@ function updateTimelineUI() {
 function seekTimeline(t) { const p = state.player; p.t = Math.max(0, Math.min(1, t)); applyFrame(p.t); updateTimelineUI(); }
 function togglePlay() { const p = state.player; if (!p.kind) return; if (p.t >= 1 && !p.playing) p.t = 0; p.playing = !p.playing; p.last = performance.now(); updateTimelineUI(); }
 function playerTick(now) {
-  const p = state.player; if (!p.kind || !p.playing) return;
+  const p = state.player; if (!p.kind || !p.playing) return false;
   const dt = Math.min(0.1, (now - p.last) / 1000); p.last = now;
   const speed = p.kind === 'fold' ? state.foldSpeed : 1;
   p.t = Math.min(1, p.t + dt * speed / p.duration);
   applyFrame(p.t); updateTimelineUI();
   if (p.t >= 1) { if (p.kind === 'video' && state.videoPreset === 'orbit') p.t = 0; else { p.playing = false; updateTimelineUI(); } }
+  return true;
 }
 
 // ---------------------------------------------------------------- exports
@@ -289,8 +321,11 @@ async function renderStillUI() {
     if (state.player.kind) exitTimeline();
     setOpenRaw(wantOpen ? OPEN_DEG : state.openDeg);
     applyLift(wantTray ? liftHeight() : 0);
-    if (cam !== 'current') { viewer.camera.aspect = w / h; viewer.camera.updateProjectionMatrix(); const c = viewer.cameraFor(state.dims, cam); viewer.setCamera(c.pos, c.target); }
-    const blob = await viewer.renderStill({ width: w, height: h, transparent: bg === 'transparent', hideGround: bg === 'plain' });
+    const savedLens = { ...viewer.lens };
+    if (cam !== 'current') { const c = viewer.cameraFor(state.dims, cam, w / h); viewer.setCamera(c.pos, c.target, c); }
+    const samples = Math.max(48, Math.min(160, Math.round(160 * 1600 / Math.max(w, h))));
+    const blob = await viewer.renderStill({ width: w, height: h, transparent: bg === 'transparent', hideGround: bg === 'plain', samples });
+    Object.assign(viewer.lens, savedLens);
     const url = URL.createObjectURL(blob);
     const name = `AYGIS_${state.sku}_${cam}_${w}x${h}.png`;
     $('#render-img').src = url; $('#render-dl').href = url; $('#render-dl').download = name; $('#render-preview').classList.remove('hidden');
@@ -318,7 +353,8 @@ async function exportVideoUI(kind) {
     const auto = (kind === 'fold' ? state.foldCamera : state.vCamera) === 'path';
     viewer.userMovedCamera = false;
     overlay(`Recording ${w} × ${h} @ ${fps} fps…`, 0); await nextPaint();
-    const res = await recordVideo(viewer, { width: w, height: h, fps, duration, onFrame: (t) => applyFrame(t, auto), onProgress: (k, msg) => overlay(msg, k) });
+    const samples = w * h > 1.5e6 ? 4 : 6;          // per-frame accumulation (AA, soft shadows, depth of field)
+    const res = await recordVideo(viewer, { width: w, height: h, fps, duration, samples, onFrame: (t) => applyFrame(t, auto), onProgress: (k, msg) => overlay(msg, k) });
     const name = `AYGIS_${state.sku}_${kind === 'fold' ? 'fold-sequence' : state.videoPreset}_${w}x${h}.${res.ext}`;
     downloadBlob(res.blob, name);
     status(sel, `<span class="ok">Exported ${name}</span> · ${res.frames} frames · ${(res.blob.size / 1048576).toFixed(1)} MB · ${res.mime.split(';')[0]}${res.ext === 'webm' ? '\nWebM plays in Chrome, Edge, Firefox and VLC; convert to MP4 with HandBrake or ffmpeg for Keynote / PowerPoint.' : ''}`);
@@ -469,14 +505,14 @@ function wireUI() {
   $('#chk-rotate').addEventListener('change', (e) => viewer.setAutoRotate(e.target.checked));
   $('#chk-shadow').addEventListener('change', (e) => viewer.setShadows(e.target.checked));
   $('#chk-ao').addEventListener('change', (e) => viewer.setAO(e.target.checked));
-  $('#chk-bloom').addEventListener('change', (e) => viewer.setBloom(e.target.checked));
   $('#chk-dof').addEventListener('change', (e) => viewer.setDOF(e.target.checked));
   $('#chk-film').addEventListener('change', (e) => viewer.setFilm(e.target.checked));
+  $('#q-mode').addEventListener('change', (e) => setQualityUI(e.target.value));
   $('#btn-share').addEventListener('click', shareLink);
   ['#r-aspect', '#r-cam'].forEach(sel => $(sel).addEventListener('change', updateFrameGuide));
   new ResizeObserver(updateFrameGuide).observe($('#stage'));
 
-  $$('#cam-seg button').forEach(b => b.addEventListener('click', () => { leaveInspect(); viewer.frame(state.dims, b.dataset.cam, true); }));
+  $$('#cam-seg button').forEach(b => b.addEventListener('click', () => { leaveInspect(); state.camPreset = b.dataset.cam; $$('#cam-seg button').forEach(x => x.classList.toggle('active', x === b)); framePreset(b.dataset.cam); }));
   $('#btn-reset').addEventListener('click', resetScene);
   $('#btn-shot').addEventListener('click', () => { const a = document.createElement('a'); a.href = viewer.screenshot(); a.download = `AYGIS_${state.sku}_${state.openDeg > 5 ? 'open' : 'closed'}.png`; a.click(); });
   $('#btn-inspect-back').addEventListener('click', leaveInspect);
@@ -562,6 +598,24 @@ function wireAccess() {
   });
   applyAccess();
 }
+/** frame a named shot; shots that need the open box open it first */
+function framePreset(name) {
+  const needOpen = name === 'open' || name === 'interior' || name === 'macro';
+  const go = () => viewer.frame(state.dims, name, true);
+  if (needOpen && state.openDeg < 100) return animateOpen(OPEN_DEG).then(go);
+  return go();
+}
+/** quality preset: render settings apply at once; artwork resolution and set-dressing density rebuild if they change */
+async function setQualityUI(mode) {
+  const before = viewer.q;
+  viewer.setQuality(mode);
+  const after = viewer.q;
+  try { localStorage.setItem('aygis.quality', mode); } catch (e) { }
+  syncQualityLabel();
+  if (after.texPPMM !== before.texPPMM) { for (const k of Object.keys(state.defaultSets)) { state.defaultSets[k].dispose(); delete state.defaultSets[k]; } await buildBox(state.sku, { keepCamera: true }); }
+  if ((after.density !== before.density || after.bake !== before.bake) && viewer.env) { const id = viewer.env.id; viewer.env = null; state.envId = null; await setEnvironmentUI(id); }
+}
+function syncQualityLabel() { const o = $('#q-mode option[value="auto"]'); if (o) o.textContent = `Auto · ${viewer.autoTier[0].toUpperCase()}${viewer.autoTier.slice(1)}`; }
 function resetScene() {
   leaveInspect(); if (state.player.kind) exitTimeline();
   if (state.lifted) { state.lifted = false; $('#btn-lift').classList.remove('active'); applyLift(0); }
@@ -573,31 +627,41 @@ function resetScene() {
 
 // ---------------------------------------------------------------- boot
 async function main() {
+  mark('main');
   viewer = new Viewer($('#c'));
+  try { const qm = localStorage.getItem('aygis.quality'); if (qm && qm !== 'auto') viewer.setQuality(qm); } catch (e) { }
+  viewer.onQuality = () => syncQualityLabel();
+  mark('viewer');
   confections = new Confections();
   viewer.root.add(confections.group);
-  window.AYGIS = { state, viewer, confections, buildBox, setOpen, animateOpen, animateLift, handleImport, lidAngles, THREE, startTimeline, exitTimeline, seekTimeline, applyFrame, renderStillUI, exportVideoUI, setEnvironmentUI, setMode, setStudioTab, foldState, VIDEO_PRESETS };
+  window.AYGIS = { timings, auditScale, state, viewer, confections, buildBox, setOpen, animateOpen, animateLift, handleImport, lidAngles, THREE, startTimeline, exitTimeline, seekTimeline, applyFrame, renderStillUI, exportVideoUI, setEnvironmentUI, setMode, setStudioTab, foldState, VIDEO_PRESETS };
   overlay('Loading geometry…', 0.1);
   const [models, manifest, samples] = await Promise.all([
     fetch('assets/models/box_models.json').then(r => r.json()),
     fetch('assets/artwork/manifest.json').then(r => r.json()),
     fetch('assets/samples/index.json').then(r => r.ok ? r.json() : []).catch(() => []),
   ]);
-  state.models = models; state.manifest = manifest; state.samples = samples;
+  state.models = models; state.manifest = manifest; state.samples = samples; mark('data');
   $('#version').textContent = `dielines ${models.version}`; $('#foot-ver').textContent = models.version;
   for (const s of samples) { const o = document.createElement('option'); o.value = s.file; o.textContent = s.label; $('#sample').appendChild(o); }
   buildEnvGrid(); buildPresetList();
   overlay('Loading confections…', 0.45);
   await confections.load('assets/models/confections.glb');
-  viewer.propCtx.confection = (i) => confections.makeOne(i);
+  viewer.propConfection = (i, opts) => confections.makeOne(i, opts); mark('confections');
   wireUI();
+  $('#q-mode').value = viewer.qualityMode; syncQualityLabel();
   const q = new URLSearchParams(location.search);
-  if (q.get('env') && q.get('env') !== 'studio') await setEnvironmentUI(q.get('env')); else { viewer.refreshEnvironment(); $$('.env-card')[0].classList.add('active'); $('#env-blurb').textContent = ENVIRONMENTS[0].blurb; }
-  await buildBox(q.get('sku') || 'BOX-10');
+  await buildBox(q.get('sku') || 'BOX-10');          // the product first (its programs compile while the set is built)
+  mark('box');
+  await setEnvironmentUI(q.get('env') || 'studio');
+  mark('environment'); loaderStep('ready'); overlay(null); state.booted = true;
+  // background work after the first useful view: coating shader, post-processing programs
+  confections.upgrade(viewer, [viewer.envRoot]).then(() => mark('coating'));
+  viewer.warmPostprocessing().then(() => mark('post'));
   $('#btn-default').classList.add('active');
   status('#design-status', '<b>AYGIS production artwork</b> (from the PDF/X-4 masters, foil rendered as metallic gold)');
   viewer.onFrame.push(playerTick);
-  viewer.onFrame.push(() => { if (!state.player.kind && (state.lifted || viewer.tweens.length)) confections.updatePositions(); });
+  viewer.onFrame.push(() => { if (!state.player.kind && viewer.tweens.length) { confections.updatePositions(); return true; } return false; });
   if (q.get('open')) setOpen(+q.get('open'));
   if (q.get('mode')) setMode(q.get('mode'));
   if (q.get('sample')) await handleImport(async () => (await fetch('assets/samples/' + q.get('sample'))).arrayBuffer(), q.get('sample'));
@@ -606,3 +670,5 @@ async function main() {
   $('#panel').scrollTop = 0;
 }
 main().catch(e => { console.error(e); overlay('Failed to start: ' + (e.message || e)); });
+// offline / instant repeat visits on the static host (HTTPS only, so local development is never served stale files)
+if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => { }));

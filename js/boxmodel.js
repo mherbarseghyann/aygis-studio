@@ -3,7 +3,7 @@
 // inherits its parent's transform.  Z-up millimetre frame of the production files; the viewer's root
 // group converts it to three.js Y-up.
 import * as THREE from 'three';
-import { buildPanelGeometry } from './panelgeom.js';
+import { buildPanelGeometry, foldFillet } from './panelgeom.js';
 
 const DEG = Math.PI / 180;
 
@@ -44,6 +44,16 @@ export class FoldedComponent {
       this.meshes[p.name] = mesh;
       this.group.add(mesh);
     }
+    // rounded outer surface of every fold (moves with the parent panel)
+    this.fillets = [];
+    for (const hh of comp.hinges) {
+      if (hh.kind === 'none') continue;
+      const parent = comp.panels.find(pp => pp.name === hh.parent);
+      const f = new THREE.Mesh(foldFillet(hh.a, hh.b, comp.t), [materials.front(parent), materials.back(parent)]);
+      f.matrixAutoUpdate = false; f.name = `fold_${hh.parent}_${hh.child}`; f.castShadow = true; f.receiveShadow = true;
+      f.userData.parent = hh.parent; f.userData.panel = parent;
+      this.fillets.push(f); this.group.add(f);
+    }
     this.T = {};
     this.angles = {};
     this.update({});
@@ -54,6 +64,7 @@ export class FoldedComponent {
       const m = this.meshes[p.name];
       m.material = [materials.front(p), materials.back(p), materials.front(p), materials.edge];
     }
+    for (const f of this.fillets) f.material = [materials.front(f.userData.panel), materials.back(f.userData.panel)];
   }
 
   /** angles: {childName: degrees} overrides; others use the closed-state angle from the dieline. */
@@ -77,6 +88,7 @@ export class FoldedComponent {
       m.matrix.copy(pre).multiply(T[name] || new THREE.Matrix4());
       m.matrixWorldNeedsUpdate = true;
     }
+    for (const f of this.fillets || []) { f.matrix.copy(this.meshes[f.userData.parent].matrix); f.matrixWorldNeedsUpdate = true; }
   }
 
   /** world (Z-up component frame, before the viewer's root rotation) matrix of a panel */
