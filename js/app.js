@@ -40,7 +40,7 @@ function overlay(text, k) {
 let toastT = 0;
 function toast(text, ms = 3200) { const t = $('#toast'); t.textContent = text; t.classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), ms); }
 function status(sel, html) { $(sel).innerHTML = html; }
-const nextPaint = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+const nextPaint = () => new Promise(r => { if (document.hidden) setTimeout(r, 0); else requestAnimationFrame(() => setTimeout(r, 0)); });   // never stall in a background tab
 
 // ---------------------------------------------------------------- materials
 function materialsFor(comp) {
