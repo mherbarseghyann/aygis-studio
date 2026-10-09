@@ -6,7 +6,7 @@
 //     modules always come from the same version, falling back to the cache when offline,
 //   * serves heavy static assets (vendor libraries, models, artwork, fonts, sample PDFs) CACHE-FIRST.
 // Bump VERSION on every deploy: the old cache is deleted when the new worker activates.
-const VERSION = 'aygis-r1.2-2026-10-09';
+const VERSION = 'aygis-r1.3-2026-10-09';
 const SHELL = [
   './', './index.html', './css/app.css', './vendor/fonts/fonts.css',
   './js/app.js', './js/viewer.js', './js/environments.js', './js/lookdev.js', './js/props.js', './js/sky.js', './js/texbake.js', './js/units.js',
